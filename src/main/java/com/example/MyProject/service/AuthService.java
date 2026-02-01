@@ -1,5 +1,6 @@
 package com.example.MyProject.service;
 
+import com.example.MyProject.dto.UserDto;
 import com.example.MyProject.model.User;
 import com.example.MyProject.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,27 +18,26 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public Optional<User> login(String email, String password) {
-        Optional<User> user = userRepository.findByEmail(email);
-
-        if (user.isPresent()) {
-            if (passwordEncoder.matches(password, user.get().getPassword())) {
-                return user;
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    public User register(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("ROLE_USER"); // default
+    // ✅ Registration
+    public User register(UserDto dto) {
+        User user = new User();
+        user.setName(dto.getName());
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setProvider("LOCAL");
+        user.setRole("ROLE_USER");
         return userRepository.save(user);
     }
 
-    public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+    // ✅ Login
+    public Optional<User> login(String email, String rawPassword) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(rawPassword, user.getPassword())) {
+                return Optional.of(user);
+            }
+        }
+        return Optional.empty();
     }
-
 }

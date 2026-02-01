@@ -1,9 +1,13 @@
 package com.example.MyProject.controller;
 
+import com.example.MyProject.dto.UserDto;
+import com.example.MyProject.dto.UserDto;
 import com.example.MyProject.dto.UserProfileDTO;
+import com.example.MyProject.dto.ApiResponse;
 import com.example.MyProject.model.User;
 import com.example.MyProject.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,42 +29,41 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    // ✅ Manual login (email + password) using JSON body
+    // ✅ Manual login (email + password)
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse> login(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String password = request.get("password");
 
         Optional<User> userOpt = authService.login(email, password);
-
         if (userOpt.isEmpty()) {
-            return ResponseEntity.status(401).body("Invalid credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse(false, "Invalid credentials", null));
         }
 
         User user = userOpt.get();
 
-        // ✅ Set authentication context so /api/user/profile works for LOCAL users
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // ✅ Return user details to frontend
         UserProfileDTO dto = new UserProfileDTO(
                 user.getEmail(),
                 user.getName(),
                 user.getPicture(),
-                user.getProvider(), // "LOCAL"
+                user.getProvider(),
                 user.getRole()
         );
 
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(new ApiResponse(true, "Login successful", dto));
     }
 
     // ✅ Registration
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        User saved = authService.register(user);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<ApiResponse> register(@RequestBody UserDto dto) {
+        User saved = authService.register(dto);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse(true, "User registered successfully", saved));
     }
 }

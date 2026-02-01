@@ -65,9 +65,12 @@ public class SecurityConfig {
                 }))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/oauth2/**", "/auth/**").permitAll()
-                        .requestMatchers("/api/users/add").permitAll() // ✅ Allow public access to POST /api/users/add
-                        .requestMatchers("/api/user/**").authenticated()
+                        .requestMatchers(
+                                "/", "/login", "/oauth2/**", "/auth/**",
+                                "/api/users/add",       // registration
+                                "/api/users/basic",     // dashboard create
+                                "/api/users/update",  "/api/users/profile" // dashboard update
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -79,7 +82,6 @@ public class SecurityConfig {
                             String email = oauthUser.getAttribute("email");
                             String name = oauthUser.getAttribute("name");
                             String providerId = oauthUser.getAttribute("sub");
-                            String picture = oauthUser.getAttribute("picture");
 
                             if (email == null) {
                                 response.sendRedirect("http://localhost:3000/login?error=email");
@@ -88,12 +90,17 @@ public class SecurityConfig {
 
                             User user = userRepository.findByEmail(email).orElseGet(User::new);
 
+                            if (name != null) {
+                                String[] parts = name.split(" ", 2);
+                                user.setFirstName(parts[0]);
+                                if (parts.length > 1) {
+                                    user.setLastName(parts[1]);
+                                }
+                            }
+
                             user.setEmail(email);
-                            user.setName(name);
-                            user.setRole("ROLE_USER");
                             user.setProvider("GOOGLE");
                             user.setProviderId(providerId);
-                            user.setPicture(picture);
 
                             userRepository.save(user);
 

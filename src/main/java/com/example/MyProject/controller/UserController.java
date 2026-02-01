@@ -1,63 +1,43 @@
 package com.example.MyProject.controller;
 
-import com.example.MyProject.dto.UserProfileDTO;
+import com.example.MyProject.dto.BasicUserDto;
+import com.example.MyProject.dto.ApiResponse;
 import com.example.MyProject.model.User;
-import com.example.MyProject.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.MyProject.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/user")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+@RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private AuthService authService;
+    private final UserService userService;
 
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    // ✅ Endpoint for dashboard "Add New User"
+    @PostMapping("/basic")
+    public ResponseEntity<ApiResponse> addBasicUser(@Valid @RequestBody BasicUserDto dto) {
+        User created = userService.createBasicUser(dto);
+        return ResponseEntity.ok(new ApiResponse(true, "User created successfully", created));
+    }
+
+    // ✅ Endpoint for dashboard "Update User by Email"
+    @PostMapping("/update")
+    public ResponseEntity<ApiResponse> updateUser(@Valid @RequestBody BasicUserDto dto) {
+        User updated = userService.updateUserDetails(dto);
+        return ResponseEntity.ok(new ApiResponse(true, "User updated successfully", updated));
+    }
+
+    // ✅ Endpoint to fetch logged-in user's profile
     @GetMapping("/profile")
-    public ResponseEntity<?> profile(Authentication authentication,
-                                     @AuthenticationPrincipal Object principal) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(401).body("Not authenticated");
-        }
-
-        // Handle Google OAuth2 user
-        if (principal instanceof DefaultOAuth2User oauthUser) {
-            Map<String, Object> attrs = oauthUser.getAttributes();
-            String email = (String) attrs.getOrDefault("email", "");
-            String name = (String) attrs.getOrDefault("name", "");
-            String picture = (String) attrs.getOrDefault("picture", "");
-
-            UserProfileDTO dto = new UserProfileDTO(
-                    email,
-                    name,
-                    picture,
-                    "GOOGLE",
-                    "USER"
-            );
-            return ResponseEntity.ok(dto);
-        }
-
-        // Handle LOCAL user via DB lookup
-        String email = authentication.getName();
-        User user = authService.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(404).body("User not found");
-        }
-
-        UserProfileDTO dto = new UserProfileDTO(
-                user.getEmail(),
-                user.getName(),
-                user.getPicture(),
-                user.getProvider(), // "LOCAL"
-                user.getRole()
-        );
-        return ResponseEntity.ok(dto);
+    public ResponseEntity<User> getProfile(Authentication authentication) {
+        String email = authentication.getName(); // logged-in user’s email
+        User user = userService.findByEmail(email);
+        return ResponseEntity.ok(user);
     }
 }

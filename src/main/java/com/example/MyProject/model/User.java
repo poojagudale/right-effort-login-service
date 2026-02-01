@@ -20,11 +20,22 @@ public class User {
     @Column(nullable = true)
     private String password;
 
+    // ✅ Profile details
     @Column(nullable = true)
-    private String name;
+    private String firstName;
 
     @Column(nullable = true)
-    private String provider; // e.g., "GOOGLE" or "LOCAL"
+    private String lastName;
+
+    @Column(nullable = true)
+    private String mobileNo;
+
+    // ✅ OAuth/general fields
+    @Column(nullable = true)
+    private String name; // full name (Google OAuth)
+
+    @Column(nullable = true)
+    private String provider; // e.g., GOOGLE or LOCAL
 
     @Column(nullable = true, unique = true)
     private String providerId; // Google "sub" or local user id
@@ -44,8 +55,7 @@ public class User {
         this.role = "ROLE_USER";
     }
 
-    // getters & setters
-
+    // ✅ Getters & Setters
     public Long getId() { return id; }
 
     public String getEmail() { return email; }
@@ -53,6 +63,15 @@ public class User {
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
+
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
+
+    public String getMobileNo() { return mobileNo; }
+    public void setMobileNo(String mobileNo) { this.mobileNo = mobileNo; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
