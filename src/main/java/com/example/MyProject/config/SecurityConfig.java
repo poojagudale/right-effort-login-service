@@ -69,7 +69,8 @@ public class SecurityConfig {
                                 "/", "/login", "/oauth2/**", "/auth/**",
                                 "/api/users/add",       // registration
                                 "/api/users/basic",     // dashboard create
-                                "/api/users/update",  "/api/users/profile" // dashboard update
+                                "/api/users/update",    // dashboard update
+                                "/api/users/profile"    // fetch profile
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -82,6 +83,7 @@ public class SecurityConfig {
                             String email = oauthUser.getAttribute("email");
                             String name = oauthUser.getAttribute("name");
                             String providerId = oauthUser.getAttribute("sub");
+                            String picture = oauthUser.getAttribute("picture"); // ✅ fetch Google profile picture
 
                             if (email == null) {
                                 response.sendRedirect("http://localhost:3000/login?error=email");
@@ -101,6 +103,7 @@ public class SecurityConfig {
                             user.setEmail(email);
                             user.setProvider("GOOGLE");
                             user.setProviderId(providerId);
+                            user.setPicture(picture); // ✅ save profile picture
 
                             userRepository.save(user);
 

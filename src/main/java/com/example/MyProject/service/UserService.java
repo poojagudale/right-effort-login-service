@@ -28,6 +28,7 @@ public class UserService {
         user.setRole("ROLE_USER");
         user.setProvider("LOCAL");
         user.setPassword(null); // or generate a random password if needed
+        user.setPicture(dto.getPicture()); // ✅ allow profile picture
 
         return userRepository.save(user);
     }
@@ -43,6 +44,7 @@ public class UserService {
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setMobileNo(dto.getMobileNo());
+        user.setPicture(dto.getPicture()); // ✅ update profile picture too
 
         return userRepository.save(user);
     }

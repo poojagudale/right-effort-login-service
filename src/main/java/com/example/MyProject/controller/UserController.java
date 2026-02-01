@@ -33,11 +33,9 @@ public class UserController {
         return ResponseEntity.ok(new ApiResponse(true, "User updated successfully", updated));
     }
 
-    // ✅ Endpoint to fetch logged-in user's profile
     @GetMapping("/profile")
-    public ResponseEntity<User> getProfile(Authentication authentication) {
-        String email = authentication.getName(); // logged-in user’s email
-        User user = userService.findByEmail(email);
+    public ResponseEntity<User> getProfile() {
+        User user = userService.findByEmail("poojagudale217@gmail.com");
         return ResponseEntity.ok(user);
     }
 }

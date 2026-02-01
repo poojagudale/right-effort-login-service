@@ -17,6 +17,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(nullable = true, unique = true)
+    private String username;
+
     @Column(nullable = true)
     private String password;
 
@@ -56,6 +59,13 @@ public class User {
     }
 
     // ✅ Getters & Setters
+    public String getUsername() {
+        return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public Long getId() { return id; }
 
     public String getEmail() { return email; }
