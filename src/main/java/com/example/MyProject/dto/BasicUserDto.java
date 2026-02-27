@@ -19,6 +19,8 @@ public class BasicUserDto {
 
     private String picture; // ✅ add profile picture
 
+    private String password;
+
     // Getters and setters
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -34,4 +36,7 @@ public class BasicUserDto {
 
     public String getPicture() { return picture; }
     public void setPicture(String picture) { this.picture = picture; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }

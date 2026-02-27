@@ -1,9 +1,9 @@
 package com.example.MyProject.config;
 
-import com.example.MyProject.model.User;
 import com.example.MyProject.repository.UserRepository;
 import com.example.MyProject.service.CustomOAuth2UserService;
 import com.example.MyProject.service.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,11 +31,13 @@ public class SecurityConfig {
     @Autowired
     private CustomOAuth2UserService customOAuth2UserService;
 
+    // ✅ Password encoder for local users
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // ✅ Authentication provider for manual login
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -44,6 +46,7 @@ public class SecurityConfig {
         return authProvider;
     }
 
+    // ✅ Authentication manager
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder builder = http.getSharedObject(AuthenticationManagerBuilder.class);
@@ -51,6 +54,7 @@ public class SecurityConfig {
         return builder.build();
     }
 
+    // ✅ Security filter chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -74,23 +78,24 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
+                // ✅ Google OAuth2 login
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler((request, response, authentication) -> {
-
                             OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
 
                             String email = oauthUser.getAttribute("email");
                             String name = oauthUser.getAttribute("name");
                             String providerId = oauthUser.getAttribute("sub");
-                            String picture = oauthUser.getAttribute("picture"); // ✅ fetch Google profile picture
+                            String picture = oauthUser.getAttribute("picture");
 
                             if (email == null) {
                                 response.sendRedirect("http://localhost:3000/login?error=email");
                                 return;
                             }
 
-                            User user = userRepository.findByEmail(email).orElseGet(User::new);
+                            var user = userRepository.findByEmail(email)
+                                    .orElseGet(com.example.MyProject.model.User::new);
 
                             if (name != null) {
                                 String[] parts = name.split(" ", 2);
@@ -103,14 +108,25 @@ public class SecurityConfig {
                             user.setEmail(email);
                             user.setProvider("GOOGLE");
                             user.setProviderId(providerId);
-                            user.setPicture(picture); // ✅ save profile picture
+                            user.setPicture(picture);
 
                             userRepository.save(user);
 
                             response.sendRedirect("http://localhost:3000/google/success");
                         })
                 )
-                .authenticationProvider(authenticationProvider());
+                // ✅ Manual login provider
+                .authenticationProvider(authenticationProvider())
+                // ✅ Logout configuration
+                .logout(logout -> logout
+                        .logoutUrl("/auth/logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                        })
+                );
 
         return http.build();
     }

@@ -1,7 +1,6 @@
 package com.example.MyProject.controller;
 
 import com.example.MyProject.dto.UserDto;
-import com.example.MyProject.dto.UserDto;
 import com.example.MyProject.dto.UserProfileDTO;
 import com.example.MyProject.dto.ApiResponse;
 import com.example.MyProject.model.User;
@@ -13,8 +12,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,9 +31,9 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    // ✅ Manual login (email + password)
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse> login(@RequestBody Map<String, String> request,
+                                             HttpServletRequest httpRequest) {
         String email = request.get("email");
         String password = request.get("password");
 
@@ -48,9 +50,14 @@ public class AuthController {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // Force session creation
+        httpRequest.getSession(true);
+
         UserProfileDTO dto = new UserProfileDTO(
                 user.getEmail(),
-                user.getName(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getMobileNo(),
                 user.getPicture(),
                 user.getProvider(),
                 user.getRole()
@@ -59,11 +66,19 @@ public class AuthController {
         return ResponseEntity.ok(new ApiResponse(true, "Login successful", dto));
     }
 
-    // ✅ Registration
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@RequestBody UserDto dto) {
         User saved = authService.register(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiResponse(true, "User registered successfully", saved));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+        }
+        return ResponseEntity.ok(new ApiResponse(true, "Logout successful", null));
     }
 }
